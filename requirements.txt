@@ -1,0 +1,31 @@
+# Project: Analisis Jaringan Sosial (SNA) untuk Program MBG
+# Purpose: Community detection and social network analysis on X/Twitter discussions
+# Python Version: 3.8+
+
+# Data Processing
+pandas==3.0.3
+numpy>=1.20.0
+
+# Network Analysis & Graph Algorithms
+networkx==3.6.1
+python-louvain==0.16
+
+# Sentiment Analysis & NLP
+textblob>=0.17.1
+nltk>=3.8
+
+# Statistical Analysis
+scipy>=1.10.0
+
+# Visualization
+matplotlib==3.10.9
+pyvis==0.3.2
+plotly>=5.0.0
+
+# Utilities
+python-dateutil>=2.8.0
+
+# Development & Testing (optional)
+pytest>=7.0.0
+black>=22.0.0
+flake8>=4.0.0
