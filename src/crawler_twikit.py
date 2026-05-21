@@ -67,6 +67,8 @@ async def collect_tweets_twikit(query, limit=100):
             
             if count < limit:
                 logging.info(f"Collected {count} tweets, fetching next page...")
+                # Add random delay to prevent hitting Twitter rate limits
+                await asyncio.sleep(random.uniform(1.5, 3.5))
                 tweets = await tweets.next()
             else:
                 break
@@ -79,9 +81,16 @@ async def collect_tweets_twikit(query, limit=100):
         return None
 
 if __name__ == "__main__":
-    QUERY = "(pengadaan MBG) OR (vendor MBG) OR (anggaran MBG) OR (makan bergizi vendor) OR (susu ikan MBG) lang:id"
+    # Updated QUERY: Includes program variants, key procurement/controversial items, time filter, and minimum engagement
+    QUERY = (
+        '((("makan bergizi gratis" OR "makan siang gratis" OR "MBG" OR "badan gizi") AND '
+        '(pengadaan OR vendor OR anggaran OR tender OR korupsi OR logistik OR kontrak OR '
+        '"susu ikan" OR "71T" OR "motor listrik" OR "kaos kaki" OR keyboard OR timbangan OR '
+        'dapur OR "alat masak"))) since:2025-01-01 min_faves:5 lang:id'
+    )
     
     async def main():
+        # Set limit higher (e.g., 2000 or 5000) for a richer dataset when running with real cookies
         df = await collect_tweets_twikit(QUERY, limit=200)
         
         # Check if real scraping was successful and returned data
@@ -118,7 +127,12 @@ if __name__ == "__main__":
                 "Transparansi anggaran MBG adalah harga mati bagi publik.",
                 "Siapa vendor susu ikan yang ditunjuk pemerintah? 🤔",
                 "Makan siang gratis mulai didistribusikan ke daerah 3T.",
-                "Bagaimana nasib kantin sekolah setelah ada program MBG?"
+                "Bagaimana nasib kantin sekolah setelah ada program MBG?",
+                "Pengadaan motor listrik untuk kurir distribusi MBG menuai kritik publik.",
+                "Kontrak vendor penyedia kaos kaki gratis dalam paket program MBG.",
+                "Rencana pengadaan keyboard dan perangkat IT monitoring gizi di daerah.",
+                "Pengadaan alat timbangan digital di sekolah sasaran makan siang gratis.",
+                "Standardisasi dapur umum MBG memerlukan alat masak ramah lingkungan."
             ]
             
             for i in range(5000):
