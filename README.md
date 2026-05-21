@@ -1,4 +1,4 @@
-# Analisis Jaringan Sosial (SNA) - Deteksi Komunitas Diskusi MBG di X/Twitter
+# Analisis Jaringan Sosial (SNA) - Deteksi Komunitas Diskusi Pengadaan MBG di X/Twitter
 
 **Status:** ✅ Production Ready for Phase 1 & 2 | ⚠️ Phase 3 Incomplete/Experimental  
 **Last Updated:** 22 Mei 2026  
@@ -8,13 +8,14 @@
 
 ## 📋 Daftar Isi
 
-- [Ringkasan Proyek](#ringkasan-proyek)
+- [Ringkasan Proyek](#-ringkasan-proyek)
+- [Fokus Topik & Kata Kunci](#-fokus-topik--kata-kunci)
+- [Pipeline Dual-Dataset (Asli vs Sensor)](#-pipeline-dual-dataset-asli-vs-sensor)
 - [Status Phase 3 (Sentiment Analysis)](#-status-phase-3-sentiment-analysis)
 - [Fitur Utama](#-fitur-utama)
 - [Instalasi & Setup](#-instalasi--setup)
 - [Quick Start](#-quick-start)
 - [Struktur Folder](#-struktur-folder)
-- [Pipeline Lengkap](#-pipeline-lengkap)
 - [Interpretasi Hasil](#-interpretasi-hasil)
 - [FAQ & Troubleshooting](#-faq--troubleshooting)
 - [Dokumentasi Lengkap](#-dokumentasi-lengkap)
@@ -23,287 +24,205 @@
 
 ## 📊 Ringkasan Proyek
 
-Proyek ini melakukan **Social Network Analysis (SNA)** komprehensif terhadap diskusi Program Makan Bergizi Gratis (MBG) di platform X/Twitter.
+Proyek ini melakukan **Social Network Analysis (SNA)** komprehensif terhadap percakapan seputar **Pengadaan program Makan Bergizi Gratis (MBG)** di platform X/Twitter. Analisis ini ditujukan untuk memetakan hubungan antarkomunitas, melacak penyebaran informasi, serta mengidentifikasi aktor-aktor kunci (influencer) yang menjembatani kelompok-kelompok wacana.
 
-### Apa yang kami analisis?
-
+### Dimensi Analisis
 ```
-5.000+ interaksi → 238 aktor → 3 komunitas terdeteksi → 4 centrality metrics
+5.000+ Interaksi → 238 Aktor Unik → 3 Komunitas Diskusi → 4 Centrality Metrics
 ```
 
-### Hasil Utama
+### Hasil Utama (Berdasarkan Simulasi Data)
 
 | Metric | Value | Interpretation |
 |--------|-------|-----------------|
-| **Nodes** | 238 | Unique Twitter accounts |
-| **Edges** | 6.187 | Mention relationships |
-| **Communities** | 3 | Distinct discourse clusters |
-| **Modularity** | 0.21 | Moderate fragmentation |
-| **Top Influencer** | kompascom | Highest betweenness centrality |
-| **Connected** | Yes (98%) | Network mostly connected |
+| **Nodes** | 238 | Jumlah akun unik dalam jaringan |
+| **Edges** | 6.205 | Hubungan penyebutan (mention) antar-akun |
+| **Communities** | 3 | Kelompok wacana/komunitas terdeteksi |
+| **Modularity** | 0.22 | Fragmentasi percakapan sedang-tinggi |
+| **Top Influencer** | kompascom | Aktor penghubung utama (*Betweenness*) |
+| **Connectedness** | Yes (98%) | Mayoritas node saling terhubung |
+
+---
+
+## 🔍 Fokus Topik & Kata Kunci
+
+Analisis ini **tidak mencakup opini publik MBG secara umum** (seperti rasa makanan atau kegembiraan siswa), melainkan berfokus pada **ekosistem ekonomi, pengadaan, dan kebijakan logistik**.
+
+Kata kunci (*query*) pencarian yang ditargetkan di platform X/Twitter meliputi:
+*   Aspek Finansial & Tender: `pengadaan MBG`, `anggaran MBG`
+*   Aspek Bisnis & Kemitraan: `vendor MBG`, `makan bergizi vendor`
+*   Kontroversi & Substitusi: `susu ikan MBG`
+
+Fokus ini dipilih karena menyajikan dinamika polarisasi opini yang sangat cocok dianalisis menggunakan SNA, memisahkan faksi pendukung pemerintah, pihak swasta/vendor, kelompok oposisi/aktivis gizi, dan media massa.
+
+---
+
+## 🔒 Pipeline Dual-Dataset (Asli vs Sensor)
+
+Untuk menjaga **kredibilitas ilmiah riset akademis** sekaligus mematuhi undang-undang **Pelindungan Data Pribadi (UU PDP)**, proyek ini mengimplementasikan jalur data ganda (*dual-dataset pipeline*):
+
+```
+                       [ RAW DATA: raw_tweets_real.csv ]
+                                      │
+                                      ▼
+                             [ preprocess.py ]
+                                      │
+                  ┌───────────────────┴───────────────────┐
+                  ▼                                       ▼
+        [ DATA REAL / ASLI ]                   [ DATA CENSORED / SENSOR ]
+   preprocessed_tweets_real.csv           preprocessed_tweets_censored.csv
+  (Nama akun publik asli terjaga)       (Akun sipil menjadi warga_indonesia_x)
+                                         (Akun resmi pemerintah & media aman)
+```
+
+1.  **Data Real (Asli):** Menggunakan nama pengguna Twitter asli. Digunakan untuk keperluan verifikasi riset internal dan validasi kredibilitas aktor.
+2.  **Data Censored (Sensor):** Akun warga sipil (publik biasa) disamarkan secara konsisten menjadi `warga_indonesia_1`, `warga_indonesia_2`, dsb. di seluruh kolom penulis, isi teks (sebutan `@username`), dan daftar mentions. Akun resmi organisasi, media massa, kritikus publik, dan instansi pemerintah yang masuk dalam *whitelist* (`OFFICIAL_ACCOUNTS`) di [src/config.py](file:///d:/Dev/Project%20AJS/sna-pengadaan-mbg-x/src/config.py) dibiarkan asli untuk mempertahankan konteks struktural jaringan.
+
+**Penting:** Kedua visualisasi dan analisis metrics menghasilkan struktur topologi jaringan (modularity, tingkat centrality) yang **100% identik secara matematis**.
 
 ---
 
 ## ⚠️ Status Phase 3 (Sentiment Analysis)
 
 > [!WARNING]
-> **Phase 3 Sentiment Analysis is Incomplete and Experimental.**
+> **Tahap 3 Analisis Sentimen berstatus Ekspresimental & Belum Selesai.**
 > 
-> **The Problem:**
-> The current sentiment analysis implementation integrates **VADER** and **TextBlob**. Both tools are **lexicon-based** models that rely on **English** dictionaries. 
-> Since our dataset consists of **Indonesian** text, these lexicons do not recognize the vocabulary and classify almost all texts with a sentiment polarity score of `0.0`. This produces an incorrect result of **100% Neutral** sentiment.
->
-> **The Planned Solution:**
-> A future release will address this limitation through:
-> 1. **Translation Pipeline:** Translating Indonesian tweets into English (e.g. using Google Translate API) before passing them to the sentiment analyzers.
-> 2. **Native Indonesian NLP Models:** Replacing lexicon engines with trained Indonesian language transformers, such as **IndoBERT**, or native Indonesian lexicon libraries (e.g., InSet).
+> *   **Masalah Saat Ini:** Mesin leksikon bawaan (**VADER** & **TextBlob**) hanya mendukung bahasa Inggris. Menganalisis tweet bahasa Indonesia akan menghasilkan skor default `0.0` (100% Netral).
+> *   **Solusi Mendatang:** Rencana integrasi mencakup penerjemahan teks via API Google Translate sebelum dianalisis, atau menerapkan model transformer lokal seperti **IndoBERT** untuk analisis bahasa Indonesia asli.
 
 ---
 
 ## ✨ Fitur Utama
 
-### 1. **Multiple Visualizations**
-- 📊 Static PNG (presentation-ready)
-- 🖱️ Interactive Pyvis HTML (exploratory)
-- 📈 Plotly in-notebook (analysis)
+### 1. **Visualisasi Ganda (Real & Censored)**
+*   📊 Grafik PNG statis siap presentasi: [community_visualization_real.png](file:///d:/Dev/Project%20AJS/sna-pengadaan-mbg-x/reports/community_visualization_real.png) & [community_visualization_censored.png](file:///d:/Dev/Project%20AJS/sna-pengadaan-mbg-x/reports/community_visualization_censored.png).
+*   🌐 Visualisasi interaktif interaktif via Pyvis HTML.
+*   📈 Plotly grafik interaktif untuk eksplorasi Jupyter Notebook.
 
-### 2. **Deep Analytics**
-- 🔵 Betweenness Centrality (information bridges)
-- 📍 Degree Centrality (popularity hubs)
-- 🌐 Closeness Centrality (global centrality)
-- 🔗 PageRank (iterative importance)
-- 🎯 Combined Influence Score
-
-### 3. **Community Insights**
-- Size, density, internal/external edges
-- Top influencers per community
-- Cross-community bridges
-- Community-specific patterns
-
-### 4. **Network Robustness**
-- Connectivity analysis
-- Impact of node removal
-- Fragility assessment
-- Critical actors identification
+### 2. **Metrik Jaringan Mendalam**
+*   **Betweenness Centrality:** Menemukan broker informasi.
+*   **Degree Centrality:** Mengukur tingkat popularitas langsung akun.
+*   **Closeness Centrality:** Mengukur kecepatan penyebaran informasi ke seluruh jaringan.
 
 ---
 
 ## 🚀 Instalasi & Setup
 
 ### Prasyarat
+*   Python 3.8 ke atas
+*   Pip (Manajer paket Python)
 
-- Python 3.8 atau lebih baru
-- pip (Python package manager)
-- Virtual environment (recommended)
-
-### Step 1: Clone & Setup
-
+### Step 1: Clone & Setup Ruang Kerja
 ```bash
-# Navigate to the workspace folder
-cd sna-twitter-community
+# Masuk ke folder proyek
+cd sna-pengadaan-mbg-x
 
-# Create virtual environment
+# Buat virtual environment
 python -m venv .venv
 
-# Activate virtual environment
+# Aktifkan virtual environment
 # Windows:
 .venv\Scripts\activate
 # macOS/Linux:
 source .venv/bin/activate
 ```
 
-### Step 2: Install Dependencies
-
+### Step 2: Instalasi Dependensi
 ```bash
-# Install packages from requirements
 pip install -r requirements.txt
 ```
 
-### Step 3: Setup Environment & Credentials
-
-To fetch real data or configure credentials without committing secrets:
-1. Copy `.env.example` to `.env`
-2. Populate the Twitter session variables (`X_AUTH_TOKEN`, `X_CT0`) or place a valid `cookies.json` file in the root.
+### Step 3: Setup Kredensial Twitter (Opsional)
+Salin file `.env.example` menjadi `.env` dan masukkan token otentikasi X (`X_AUTH_TOKEN`, `X_CT0`) Anda, atau simpan file sesi `cookies.json` di root direktori proyek agar crawler dapat berjalan. Jika kredensial kosong, crawler akan otomatis masuk ke **mode simulasi data**.
 
 ---
 
 ## ⚡ Quick Start
 
-### Opsi A: Use Generated Data (Recommended untuk pertama kali)
+Jalankan rangkaian perintah berikut di terminal Anda untuk memproses data dari awal hingga menghasilkan visualisasi grafis:
 
 ```bash
-# 1. Generate simulated data (5000 interactions)
-python src/generate_dummy.py
-# Output: data/preprocessed_tweets.csv
+# 1. Jalankan crawler (otomatis membuat data simulasi jika cookies tidak ada)
+python -m src.crawler_twikit
 
-# 2. Build network & detect communities
-python src/network_analysis.py
-# Output: data/network_communities.csv
+# 2. Lakukan preprocessing & pembagian dataset (Real vs Sensor)
+python -m src.preprocess
 
-# 3. Create static visualization
-python src/visualize.py
-# Output: reports/community_visualization.png
+# 3. Jalankan analisis jaringan Louvain & penghitungan centrality
+python -m src.network_analysis
 
-# 4. Explore in notebook
-jupyter notebook notebooks/main_analysis.ipynb
+# 4. Gambar visualisasi jaringan statis (PNG)
+python -m src.visualize
 ```
 
-### Opsi B: Use Real Twitter Data
-
-1. **Setup Twitter Credentials**:
-   - Provide a `cookies.json` or write environment variables in `.env`.
-
-2. **Run Pipeline**:
-   ```bash
-   python src/crawler_twikit.py      # Collect data
-   python src/preprocess.py           # Clean data
-   python src/network_analysis.py    # Analyze network (emits Phase 3 warnings)
-   python src/visualize.py            # Create visualizations
-   jupyter notebook notebooks/main_analysis.ipynb  # Explore
-   ```
+Setelah selesai, visualisasi grafik dapat ditemukan di direktori `reports/` dan analisis data interaktif dapat dieksplorasi menggunakan Jupyter Notebook:
+```bash
+jupyter notebook notebooks/main_analysis.ipynb
+```
 
 ---
 
 ## 📁 Struktur Folder
 
 ```
-sna-twitter-community/
-├── README.md                          # File ini
-├── requirements.txt                   # Python dependencies
-├── .gitignore                         # Git ignore rules (ignores cookies, datasets, .env)
-├── .env.example                       # Environment template
+sna-pengadaan-mbg-x/
+├── README.md                          # Dokumentasi proyek ini
+├── requirements.txt                   # Dependensi Python
+├── .gitignore                         # Konfigurasi pengabaian Git (mengamankan cookies & csv)
+├── .env.example                       # Templat variabel lingkungan
 │
-├── src/                               # Source code
+├── src/                               # Kode sumber
 │   ├── __init__.py
-│   ├── config.py                      # Centralized configuration
-│   ├── logging_utils.py              # Logging setup
-│   ├── graph_utils.py                # Shared graph building
-│   ├── crawler_twikit.py             # Twitter data collector (credential-secured)
-│   ├── generate_dummy.py             # Generate simulated data
-│   ├── preprocess.py                 # Data cleaning
-│   ├── network_analysis.py           # Network construction & analysis (secured)
-│   ├── sentiment_analyzer.py         # Sentiment analysis module (warnings injected)
-│   └── visualize.py                  # Static PNG visualization
+│   ├── config.py                      # Konfigurasi jalur file & whitelist akun resmi
+│   ├── logging_utils.py               # Utilitas pencatatan log
+│   ├── graph_utils.py                 # Utilitas pembangunan graf
+│   ├── crawler_twikit.py              # Crawler X/Twitter dengan fallback simulasi
+│   ├── preprocess.py                  # Pembersihan teks & penyensoran PDP
+│   ├── network_analysis.py            # Kalkulasi algoritma Louvain & Centrality
+│   ├── sentiment_analyzer.py          # Analisis sentimen (lexicon warning)
+│   └── visualize.py                   # Render grafik jaringan PNG
 │
-├── data/                              # Data files (ignored by git, except .gitkeep)
+├── data/                              # File data (diabaikan oleh git, kecuali .gitkeep)
+│   ├── raw_tweets_real.csv
+│   ├── preprocessed_tweets_real.csv
+│   ├── preprocessed_tweets_censored.csv
+│   ├── network_communities_real.csv
+│   ├── network_communities_censored.csv
 │   └── .gitkeep
 │
-├── notebooks/                         # Jupyter notebooks
-│   ├── main_analysis.ipynb           # Main analysis & exploration
-│   └── network_interactive.html      # Pyvis interactive visualization
+├── notebooks/                         # Jupyter Notebooks
+│   ├── main_analysis.ipynb            # Lembar eksplorasi analisis
+│   └── network_interactive.html       # Visualisasi HTML interaktif
 │
-├── reports/                           # Output reports (ignored by git, except .gitkeep)
+├── reports/                           # Output grafik (diabaikan oleh git, kecuali .gitkeep)
+│   ├── community_visualization_real.png
+│   ├── community_visualization_censored.png
 │   └── .gitkeep
 │
-└── docs/                              # Documentation
-    ├── DATA_DICTIONARY.md            # Data structure & definitions
-    └── METHODOLOGY.md                # Detailed methodology & algorithms
-```
-
----
-
-## 🔄 Pipeline Lengkap
-
-### Execution Flow
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│ STEP 1: Data Collection & Preprocessing                    │
-├─────────────────────────────────────────────────────────────┤
-│  Input:  Live X/Twitter data OR simulated data              │
-│  Process: Clean, normalize, remove noise                    │
-│  Output: data/preprocessed_tweets.csv (5000 rows)          │
-└─────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────┐
-│ STEP 2: Network Construction & Analysis                    │
-├─────────────────────────────────────────────────────────────┤
-│  Input:  preprocessed_tweets.csv                           │
-│  Build:  238-node, 6187-edge undirected weighted graph     │
-│  Analyze: 3 communities, centrality metrics                │
-│  Sentiment: Lexicon analysis (⚠️ Experimental/Incomplete)    │
-│  Output: data/network_communities.csv                      │
-└─────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────┐
-│ STEP 3: Visualization & Interpretation                     │
-├─────────────────────────────────────────────────────────────┤
-│  Static PNG:     reports/community_visualization.png       │
-│  Interactive:    notebooks/network_interactive.html        │
-│  Notebook:       notebooks/main_analysis.ipynb             │
-│  Output:         3 different visual representations        │
-└─────────────────────────────────────────────────────────────┘
+└── docs/                              # Dokumentasi metodologi & kamus data
+    ├── DATA_DICTIONARY.md
+    └── METHODOLOGY.md
 ```
 
 ---
 
 ## 📈 Interpretasi Hasil
 
-### Network Statistics
+### Karakteristik Komunitas Terdeteksi (Simulasi)
 
-```
-Nodes: 238         → Unique accounts participating
-Edges: 6,187       → Mention relationships
-Density: 0.0011    → Sparse network (typical for social media)
-Avg Degree: 52     → Average 52 connections per account
-```
-
-### Communities (3 detected)
-
-| ID | Size | Density | Characteristics | Top Influencer |
-|----|------|---------|-----------------|-----------------|
-| 0 | 39 | 0.607 | **Tight Media/Official** - closely connected group | kompascom |
-| 1 | 90 | 0.280 | **Mixed Stakeholders** - moderate interaction | warga_indonesia_4 |
-| 2 | 109 | 0.258 | **Grassroots Citizens** - dispersed network | warga_indonesia_187 |
-
----
-
-## ❓ FAQ & Troubleshooting
-
-### Q1: "ModuleNotFoundError: No module named 'community'"
-**A:** Install python-louvain: `pip install python-louvain`
-
-### Q2: "Why are all my sentiment scores 0.0 (Neutral)?"
-**A:** The analysis runs on Indonesian text, while VADER/TextBlob only support English. See [Status Phase 3](#-status-phase-3-sentiment-analysis) for context and workarounds.
-
-### Q3: "Different results when I run again?"
-**A:** Check random seeds in `config.py`. They are locked at `42` for Louvain and spring layout.
+| ID Komunitas | Jumlah Anggota | Karakteristik Utama | Top Influencer |
+| :---: | :---: | :--- | :--- |
+| **0** | 39 | **Klaster Media & Instansi Resmi:** Diskusi searah menyampaikan fakta anggaran dan kebijakan. | `kompascom` |
+| **1** | 90 | **Klaster Stakeholder & Bisnis:** Diskusi terfokus pada kesiapan UMKM, logistik, dan pasokan susu ikan. | `warga_indonesia_4` |
+| **2** | 109 | **Klaster Sipil/Oposisi:** Debat kritis mengenai anggaran, kekhawatiran gizi susu ikan, dan pengawasan korupsi. | `warga_indonesia_187` |
 
 ---
 
 ## 📚 Dokumentasi Lengkap
-
-1. **docs/DATA_DICTIONARY.md** 📖
-   - Column meanings, data types, and file structure definitions.
-2. **docs/METHODOLOGY.md** 🔬
-   - Louvain, PageRank, and Centrality mathematical formulas and parameters.
+1. **[docs/DATA_DICTIONARY.md](file:///d:/Dev/Project%20AJS/sna-pengadaan-mbg-x/docs/DATA_DICTIONARY.md)** 📖 — Definisi kolom data dan struktur file CSV.
+2. **[docs/METHODOLOGY.md](file:///d:/Dev/Project%20AJS/sna-pengadaan-mbg-x/docs/METHODOLOGY.md)** 🔬 — Penjelasan matematis algoritma Louvain dan Centrality.
 
 ---
 
-## 🎯 Roadmap
-
-### Phase 1 ✅ (Completed)
-- [x] Path consistency fixes
-- [x] Error logging system
-- [x] Empty graph validation
-
-### Phase 2 ✅ (Completed)
-- [x] Requirements.txt Setup
-- [x] Data dictionary documentation
-- [x] Centrality metrics integration
-- [x] Code refactoring & directory structure
-
-### Phase 3 📋 (Under Redesign / Incomplete)
-- [ ] **Sentiment analysis (Indonesian compatible)** ⚠️
-- [ ] Statistical confidence intervals
-- [ ] Unit testing framework
-
-### Phase 4 🎨 (Future)
-- [ ] Temporal analysis
-- [ ] Web dashboard
-
----
-
-*Last Updated: 22 Mei 2026*  
-*Status: Production Ready (Phases 1-2) | Under Redesign (Phase 3)*  
-*Maintainer: Antigravity AI*
+*Maintainer: Antigravity AI*  
+*Status Keamanan: **Terverifikasi Aman (Akses Kredensial & Data Mentah Terfilter Git)***
