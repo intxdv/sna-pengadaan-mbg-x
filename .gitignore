@@ -93,10 +93,14 @@ venv.bak/
 # Project specific data files
 data/*.csv
 !data/.gitkeep
+# Exclude censored data files from gitignore
+!data/*_censored.csv
 
 # Project specific report files
 reports/*.png
 !reports/.gitkeep
+# Exclude censored data files from gitignore
+!reports/*_censored.png
 
 # Notebook generated files
 notebooks/*.html
